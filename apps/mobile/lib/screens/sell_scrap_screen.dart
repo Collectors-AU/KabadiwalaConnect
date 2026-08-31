@@ -40,7 +40,7 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
   Future<void> _analyzeImage() async {
     if (_imagePath == null) return;
     setState(() => _loading = true);
-    
+
     try {
       final lotId = 'demo-lot-${Random().nextInt(1000)}';
       final classification = await ApiService.classify(lotId, _imagePath!);
@@ -49,7 +49,9 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to analyze image. Ensure backend is running.')),
+        const SnackBar(
+            content:
+                Text('Failed to analyze image. Ensure backend is running.')),
       );
     } finally {
       setState(() => _loading = false);
@@ -94,7 +96,9 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _imagePath == null ? _buildPlaceholder() : _buildResultView(),
+                child: _imagePath == null
+                    ? _buildPlaceholder()
+                    : _buildResultView(),
               ),
             ),
           ],
@@ -125,9 +129,11 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
           ),
         ),
         const SizedBox(height: 40),
-        _buildActionButton('Take Photo', () => _pickImage(ImageSource.camera), true),
+        _buildActionButton(
+            'Take Photo', () => _pickImage(ImageSource.camera), true),
         const SizedBox(height: 15),
-        _buildActionButton('Choose from Gallery', () => _pickImage(ImageSource.gallery), false),
+        _buildActionButton('Choose from Gallery',
+            () => _pickImage(ImageSource.gallery), false),
       ],
     );
   }
@@ -153,12 +159,8 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
           ),
           const SizedBox(height: 30),
           if (_result == null)
-            _buildActionButton(
-              'Analyze Scrap', 
-              _analyzeImage, 
-              true, 
-              isLoading: _loading
-            )
+            _buildActionButton('Analyze Scrap', _analyzeImage, true,
+                isLoading: _loading)
           else
             Container(
               padding: const EdgeInsets.all(30),
@@ -170,7 +172,7 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     offset: const Offset(0, 10),
                     blurRadius: 20,
                   ),
@@ -188,16 +190,26 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
                     ),
                   ),
                   const SizedBox(height: 25),
-                  _buildResultRow('Category', _result!['category'] ?? 'Unknown'),
-                  _buildResultRow('Confidence', '${((_result!['confidence'] ?? 0.0) * 100).toStringAsFixed(1)}%'),
-                  _buildResultRow('Est. Price', '₹${_result!['price'] ?? 0}/kg'),
+                  _buildResultRow(
+                      'Category', _result!['category'] ?? 'Unknown'),
+                  _buildResultRow('Confidence',
+                      '${((_result!['confidence'] ?? 0.0) * 100).toStringAsFixed(1)}%'),
+                  _buildResultRow(
+                      'Est. Price', '₹${_result!['price'] ?? 0}/kg'),
                   const SizedBox(height: 30),
                   _buildActionButton('Proceed to Weight', () {
-                    showDialog(context: context, builder: (_) => AlertDialog(
-                      title: const Text('MVP'),
-                      content: const Text('Moving to weight entry is next in the flow!'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-                    ));
+                    showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                              title: const Text('MVP'),
+                              content: const Text(
+                                  'Moving to weight entry is next in the flow!'),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('OK'))
+                              ],
+                            ));
                   }, true),
                 ],
               ),
@@ -232,14 +244,20 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1B3B86))),
+          Text(label,
+              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+          Text(value,
+              style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1B3B86))),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(String text, VoidCallback onPressed, bool isPrimary, {bool isLoading = false}) {
+  Widget _buildActionButton(String text, VoidCallback onPressed, bool isPrimary,
+      {bool isLoading = false}) {
     return GestureDetector(
       onTap: isLoading ? null : onPressed,
       child: Container(
@@ -254,12 +272,18 @@ class _SellScrapScreenState extends State<SellScrapScreen> {
           ),
         ),
         alignment: Alignment.center,
-        child: isLoading 
-            ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Color(0xFFF3F0E6), strokeWidth: 2))
+        child: isLoading
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                    color: Color(0xFFF3F0E6), strokeWidth: 2))
             : Text(
                 text.toUpperCase(),
                 style: GoogleFonts.inter(
-                  color: isPrimary ? const Color(0xFFF3F0E6) : const Color(0xFF1B3B86),
+                  color: isPrimary
+                      ? const Color(0xFFF3F0E6)
+                      : const Color(0xFF1B3B86),
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,

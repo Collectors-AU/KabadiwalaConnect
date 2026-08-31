@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int totalLots = 0;
-  
+
   @override
   void initState() {
     super.initState();
@@ -61,7 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1B3B86),
                     borderRadius: BorderRadius.circular(20),
@@ -83,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SellScrapScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SellScrapScreen()),
                 );
               },
               child: Container(
@@ -124,11 +126,13 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildCard('01', 'Today\'s Prices', 'आज के भाव', () {
-                   // Usually handled via bottom nav, but can push direct if needed
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use tabs to navigate')));
+                  // Usually handled via bottom nav, but can push direct if needed
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Use tabs to navigate')));
                 }),
                 _buildCard('02', 'My Lots', 'मेरा माल ($totalLots)', () {
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use tabs to navigate')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Use tabs to navigate')));
                 }),
               ],
             ),
@@ -136,10 +140,12 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildCard('03', 'Find Buyers', 'खरीदार खोजें', () {
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon')));
                 }),
                 _buildCard('04', 'Safety Guide', 'सुरक्षा गाइड', () {
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon')));
                 }),
               ],
             ),
@@ -149,7 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCard(String number, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildCard(
+      String number, String title, String subtitle, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -166,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
               number,
               style: GoogleFonts.playfairDisplay(
                 fontSize: 28,
-                color: const Color(0xFF1B3B86).withOpacity(0.8),
+                color: const Color(0xFF1B3B86).withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 12),
