@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.env
+
+# SQLite
+*.db
+*.db-journal
+
+# Uploads
+uploads/
+
+# Node
+node_modules/
+.expo/
+dist/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+*.apk
+*.aab
+*.ipa
+
+# Logs
+*.log
+npm-debug.log*
