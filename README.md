@@ -77,12 +77,12 @@ docs/           # Extensive Strategy & Technical Documentation
 
 ## Documentation
 
-- [Strategic Analysis](KABADIWALA_STRATEGIC_ANALYSIS.md)
-- [Architecture](ARCHITECTURE.md)
-- [MVP Scope](MVP_SCOPE.md)
-- [Demo Script](DEMO_SCRIPT.md)
-- [Data Dictionary](DATA_DICTIONARY.md)
-- [API Reference](API.md)
+- [Strategic Analysis](docs/KABADIWALA_STRATEGIC_ANALYSIS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [MVP Scope](docs/MVP_SCOPE.md)
+- [Demo Script](docs/DEMO_SCRIPT.md)
+- [Data Dictionary](docs/DATA_DICTIONARY.md)
+- [API Reference](docs/API.md)
 
 ## License
 
