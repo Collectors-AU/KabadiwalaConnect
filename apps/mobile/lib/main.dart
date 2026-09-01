@@ -1,11 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'core/database/hive_setup.dart';
+import 'core/network/sync_manager.dart';
+import 'core/providers/locale_provider.dart';
+import 'core/theme/theme.dart';
+import 'core/providers/lot_provider.dart';
+import 'features/onboarding/language_onboarding_screen.dart';
+import 'features/navigation/main_shell_screen.dart';
+import 'features/handover/handover_screen.dart';
+import 'features/handover/recycler_scanner_screen.dart';
 import 'screens/lots_screen.dart';
 import 'screens/prices_screen.dart';
 
-void main() {
-  runApp(const KabadiwalaApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hive
+  await HiveSetup.init();
+
+  // Initialize Background Sync Listener
+  SyncManager().initSyncListener();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => LotProvider()),
+      ],
+      child: const KabadiwalaApp(),
+    ),
+  );
 }
 
 class KabadiwalaApp extends StatelessWidget {
@@ -15,17 +39,15 @@ class KabadiwalaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kabadiwala Connect',
+      theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF3F0E6),
-        primaryColor: const Color(0xFF1B3B86),
-        textTheme: TextTheme(
-          displayLarge: GoogleFonts.playfairDisplay(color: const Color(0xFF1B3B86), fontWeight: FontWeight.bold),
-          bodyLarge: GoogleFonts.inter(color: const Color(0xFF152042)),
-          bodyMedium: GoogleFonts.inter(color: const Color(0xFF666666)),
-        ),
-      ),
-      home: const MainTabView(),
+      initialRoute: '/onboarding',
+      routes: {
+        '/onboarding': (context) => const LanguageOnboardingScreen(),
+        '/main_shell': (context) => const MainShellScreen(),
+        '/handover': (context) => const HandoverScreen(),
+        '/recycler_scanner': (context) => const RecyclerScannerScreen(),
+      },
     );
   }
 }

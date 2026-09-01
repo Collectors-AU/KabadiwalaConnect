@@ -23,11 +23,14 @@ dependencies:
   tflite_flutter: ^0.10.4
   connectivity_plus: ^5.0.1
   crypto: ^3.0.3
+  image: ^4.1.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.6
 
 flutter:
   uses-material-design: true
