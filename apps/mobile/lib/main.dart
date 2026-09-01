@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import 'core/database/hive_setup.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/theme/theme.dart';
+import 'core/providers/lot_provider.dart';
 import 'features/onboarding/language_onboarding_screen.dart';
-import 'screens/home_screen.dart';
+import 'features/navigation/main_shell_screen.dart';
 import 'screens/lots_screen.dart';
 import 'screens/prices_screen.dart';
 
@@ -18,6 +19,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => LotProvider()),
       ],
       child: const KabadiwalaApp(),
     ),
@@ -36,7 +38,7 @@ class KabadiwalaApp extends StatelessWidget {
       initialRoute: '/onboarding',
       routes: {
         '/onboarding': (context) => const LanguageOnboardingScreen(),
-        '/main_shell': (context) => const MainTabView(),
+        '/main_shell': (context) => const MainShellScreen(),
       },
     );
   }
