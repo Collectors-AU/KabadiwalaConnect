@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../lot_builder/lot_builder_screen.dart';
 import '../../core/theme/theme.dart';
+import '../ledger/earnings_ledger_screen.dart';
+import '../safety/safety_guidance_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key});
@@ -15,8 +17,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
   final List<Widget> _screens = [
     const LotBuilderScreen(),
     const Scaffold(body: Center(child: Text("Price Board (Coming Soon)", style: TextStyle(fontSize: 24)))),
-    const Scaffold(body: Center(child: Text("Earnings Ledger (Coming Soon)", style: TextStyle(fontSize: 24)))),
-    const Scaffold(body: Center(child: Text("Safety (Coming Soon)", style: TextStyle(fontSize: 24)))),
+    const EarningsLedgerScreen(),
+    const SafetyGuidanceScreen(),
   ];
 
   @override
