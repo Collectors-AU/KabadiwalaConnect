@@ -12,6 +12,17 @@ dependencies:
   http: ^1.2.0
   image_picker: ^1.1.2
   google_fonts: ^6.2.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.1
+  flutter_tts: ^3.8.3
+  provider: ^6.1.1
+  speech_to_text: ^6.5.1
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^3.5.5
+  tflite_flutter: ^0.10.4
+  connectivity_plus: ^5.0.1
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
@@ -20,3 +31,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/models/
+    - assets/icons/
+    - assets/images/
+    - assets/audio/
