@@ -6,6 +6,8 @@ import 'core/theme/theme.dart';
 import 'core/providers/lot_provider.dart';
 import 'features/onboarding/language_onboarding_screen.dart';
 import 'features/navigation/main_shell_screen.dart';
+import 'features/handover/handover_screen.dart';
+import 'features/handover/recycler_scanner_screen.dart';
 import 'screens/lots_screen.dart';
 import 'screens/prices_screen.dart';
 
@@ -39,6 +41,8 @@ class KabadiwalaApp extends StatelessWidget {
       routes: {
         '/onboarding': (context) => const LanguageOnboardingScreen(),
         '/main_shell': (context) => const MainShellScreen(),
+        '/handover': (context) => const HandoverScreen(),
+        '/recycler_scanner': (context) => const RecyclerScannerScreen(),
       },
     );
   }

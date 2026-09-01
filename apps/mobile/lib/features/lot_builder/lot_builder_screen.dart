@@ -1,30 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/lot_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/utils/tts_engine.dart';
+import '../../core/utils/voice_intent_parser.dart';
 import '../../core/theme/theme.dart';
 
-class LotBuilderScreen extends StatelessWidget {
+class LotBuilderScreen extends StatefulWidget {
   const LotBuilderScreen({super.key});
 
-  void _announceValuation(BuildContext context, LotProvider lotProvider, String? categoryCode) {
+  @override
+  State<LotBuilderScreen> createState() => _LotBuilderScreenState();
+}
+
+class _LotBuilderScreenState extends State<LotBuilderScreen> {
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+
+  void _announceValuation(LotProvider lotProvider, String? categoryCode) {
     if (categoryCode == null) return;
-    
-    // Quick heuristic translation for category
     String catName = categoryCode;
     String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
     
-    String textToSpeak = "${lotProvider.approxWeightKg} Kilo $catName estimated value ${lotProvider.estimatedValuation.toStringAsFixed(0)} Rupees";
+    String textToSpeak = "${lotProvider.approxWeightKg} Kilo $catName selected. Value ${lotProvider.estimatedValuation.toStringAsFixed(0)} Rupees";
     if (lang == 'hi') {
-      textToSpeak = "${lotProvider.approxWeightKg} किलो $catName का अनुमानित मूल्य ${lotProvider.estimatedValuation.toStringAsFixed(0)} रुपये है";
+      textToSpeak = "${lotProvider.approxWeightKg} किलो $catName का मूल्य ${lotProvider.estimatedValuation.toStringAsFixed(0)} रुपये है";
     } else if (lang == 'mr') {
-      textToSpeak = "${lotProvider.approxWeightKg} किलो $catName चे अंदाजे मूल्य ${lotProvider.estimatedValuation.toStringAsFixed(0)} रुपये आहे";
+      textToSpeak = "${lotProvider.approxWeightKg} किलो $catName चे मूल्य ${lotProvider.estimatedValuation.toStringAsFixed(0)} रुपये आहे";
     }
 
     TTSEngine().speak(textToSpeak);
+  }
+
+  void _listen() async {
+    if (!_isListening) {
+      bool available = false;
+      try {
+        available = await _speech.initialize(
+          onStatus: (val) {
+            if (val == 'done' || val == 'notListening') {
+              setState(() => _isListening = false);
+            }
+          },
+          onError: (val) {
+            setState(() => _isListening = false);
+            if (val.errorMsg != 'error_no_match') {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voice error: ${val.errorMsg}')));
+            }
+          },
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission denied.')));
+        return;
+      }
+
+      if (available) {
+        setState(() => _isListening = true);
+        String localeId = '${Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode}_IN';
+        
+        _speech.listen(
+          localeId: localeId,
+          onResult: (val) {
+            if (val.finalResult) {
+              _processVoiceIntent(val.recognizedWords);
+            }
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission denied.')));
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  void _processVoiceIntent(String recognizedWords) {
+    final lotProvider = Provider.of<LotProvider>(context, listen: false);
+    final intent = VoiceIntentParser.parse(recognizedWords);
+
+    bool updated = false;
+    if (intent.categoryCode != null) {
+      lotProvider.setCategoryCode(intent.categoryCode!);
+      updated = true;
+    }
+    if (intent.weightKg != null) {
+      lotProvider.setWeight(intent.weightKg!);
+      updated = true;
+    }
+
+    if (updated && lotProvider.selectedCategoryCode != null) {
+      _announceValuation(lotProvider, lotProvider.selectedCategoryCode);
+    } else if (recognizedWords.isNotEmpty && !updated) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Heard: $recognizedWords (No action taken)')));
+    }
   }
 
   @override
@@ -38,6 +110,11 @@ class LotBuilderScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _listen,
+        backgroundColor: _isListening ? Colors.red : AppTheme.primaryBlue,
+        child: Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
       ),
       body: Column(
         children: [
@@ -59,7 +136,7 @@ class LotBuilderScreen extends StatelessWidget {
                 return GestureDetector(
                   onTap: () {
                     lotProvider.setCategoryCode(category);
-                    _announceValuation(context, lotProvider, category);
+                    _announceValuation(lotProvider, category);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -131,7 +208,7 @@ class LotBuilderScreen extends StatelessWidget {
                             lotProvider.setWeight(value);
                           },
                           onChangeEnd: (value) {
-                            _announceValuation(context, lotProvider, lotProvider.selectedCategoryCode);
+                            _announceValuation(lotProvider, lotProvider.selectedCategoryCode);
                           },
                         ),
                       ),
@@ -167,7 +244,7 @@ class LotBuilderScreen extends StatelessWidget {
                 // Submit Button
                 GestureDetector(
                   onTap: () {
-                    // Route to Handover
+                    Navigator.pushNamed(context, '/handover');
                   },
                   child: Container(
                     width: double.infinity,
