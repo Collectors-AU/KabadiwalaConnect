@@ -9,6 +9,7 @@ import 'features/onboarding/language_onboarding_screen.dart';
 import 'features/navigation/main_shell_screen.dart';
 import 'features/handover/handover_screen.dart';
 import 'features/handover/recycler_scanner_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/lots_screen.dart';
 import 'screens/prices_screen.dart';
 
