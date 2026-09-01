@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/database/hive_setup.dart';
+import 'core/network/sync_manager.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/theme/theme.dart';
 import 'core/providers/lot_provider.dart';
@@ -16,6 +17,9 @@ void main() async {
   
   // Initialize Hive
   await HiveSetup.init();
+
+  // Initialize Background Sync Listener
+  SyncManager().initSyncListener();
 
   runApp(
     MultiProvider(

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/lot_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/utils/tts_engine.dart';
 import '../../core/utils/voice_intent_parser.dart';
+import '../../core/utils/edge_vision_classifier.dart';
 import '../../core/theme/theme.dart';
 
 class LotBuilderScreen extends StatefulWidget {
@@ -19,6 +21,8 @@ class LotBuilderScreen extends StatefulWidget {
 class _LotBuilderScreenState extends State<LotBuilderScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
+  final ImagePicker _picker = ImagePicker();
+  final EdgeVisionClassifier _classifier = EdgeVisionClassifier();
 
   void _announceValuation(LotProvider lotProvider, String? categoryCode) {
     if (categoryCode == null) return;
@@ -99,6 +103,33 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
     }
   }
 
+  Future<void> _takePhotoAndClassify() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image == null) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Analyzing image...')));
+
+      final result = await _classifier.classifyImage(image.path);
+      if (result != null) {
+        final lotProvider = Provider.of<LotProvider>(context, listen: false);
+        lotProvider.setCategoryCode(result.categoryCode);
+        
+        String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
+        String textToSpeak = "AI detected ${result.categoryCode}";
+        if (lang == 'hi') textToSpeak = "AI ने ${result.categoryCode} की पहचान की है";
+        else if (lang == 'mr') textToSpeak = "AI ने ${result.categoryCode} ओळखले आहे";
+        
+        TTSEngine().speak(textToSpeak);
+      } else {
+        // Fallback to manual selection gracefully
+      }
+    } catch (e) {
+      // Permission denied or other error
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera error.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lotProvider = Provider.of<LotProvider>(context);
@@ -110,6 +141,13 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt, color: AppTheme.primaryBlue, size: 28),
+            onPressed: _takePhotoAndClassify,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _listen,
