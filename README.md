@@ -63,15 +63,17 @@ docs/           # Extensive Strategy & Technical Documentation
 ## Features
 
 - **Fair Price Discovery**: Real-time material rates aggregated to prevent predatory pricing.
-- **Material Classification**: Snap a photo to instantly classify scrap and estimate weight/value.
+- **Material Classification**: Snap a photo to instantly classify scrap and estimate weight/value using on-device ML (Edge Vision Classifier).
 - **Smart Recycler Matching**: Rank authorized recyclers by materials accepted, rate, and distance.
 - **Traceability Ledger**: Every lot gets a digital identity, recording GPS, timestamps, and verifiable handovers.
-- **Offline & Low-Literacy Friendly**: Voice guidance, vernacular support (Hindi, Marathi), and core functions that work offline and sync later.
+- **Offline First**: Uses local database (Hive) for full offline functionality. Transactions and data are synchronized with the backend via a Sync Manager when connectivity is restored.
+- **Voice Guidance & Accessibility**: Integrated TTS engine and voice intent parser for low-literacy users, with vernacular language onboarding (Hindi, Marathi, etc.).
+- **Safety Guidance**: Contextual safety tips provided to collectors during operations.
 - **Call-to-Recycle (IVR concept)**: Enabling collectors without smartphones to participate via toll-free phone calls.
 
 ## Tech Stack
 
-- **Mobile:** Flutter, Dart, Google Fonts, Image Picker
+- **Mobile:** Flutter, Dart, Google Fonts, Image Picker, Hive (Local Database), TensorFlow Lite (Edge ML), Flutter TTS
 - **Backend:** FastAPI, Python 3.10+, SQLAlchemy, SQLite, Pydantic v2
 - **Web:** Semantic HTML5, Vanilla CSS3 (Scroll-Timeline)
 
