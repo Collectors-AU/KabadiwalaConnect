@@ -12,11 +12,9 @@ class SyncManager {
   final String apiEndpoint = 'http://10.0.2.2:8000/api/v1/sync'; // Adjust API host accordingly
 
   void initSyncListener() {
-    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      for (var result in results) {
-        if (result == ConnectivityResult.mobile || result == ConnectivityResult.wifi) {
-          _syncPendingTransactions();
-        }
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      if (result == ConnectivityResult.mobile || result == ConnectivityResult.wifi) {
+        _syncPendingTransactions();
       }
     });
   }
