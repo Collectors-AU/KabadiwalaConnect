@@ -30,6 +30,8 @@ class TransactionDataset(Base):
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float)
     weight = Column(Float)
+    status = Column(String, default="LOCAL_PENDING")
+    reference_image_uri = Column(String, nullable=True)
     material_id = Column(Integer, ForeignKey("material_dataset.id"))
     recycler_id = Column(Integer, ForeignKey("recycler_dataset.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

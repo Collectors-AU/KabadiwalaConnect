@@ -41,7 +41,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.build_circle),
-            label: AppTranslations.get(lang, 'lot_builder_title'),
+            label: AppTranslations.get(lang, 'nav_lot_builder'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.analytics),
@@ -49,11 +49,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.account_balance_wallet),
-            label: AppTranslations.get(lang, 'ledger_title'),
+            label: AppTranslations.get(lang, 'nav_ledger'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.health_and_safety),
-            label: AppTranslations.get(lang, 'safety_title'),
+            label: AppTranslations.get(lang, 'nav_safety'),
           ),
         ],
       ),

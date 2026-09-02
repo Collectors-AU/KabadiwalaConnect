@@ -1,55 +1,75 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-import io
 import csv
-from datetime import datetime
+import io
+from datetime import timezone
 
 from core.database import get_db
-from core.models import TraceabilityDataset, TransactionDataset, RecyclerDataset
+from core.models import TransactionDataset, TraceabilityDataset, RecyclerDataset
+from api.telephony import CATEGORY_MAP
 
 router = APIRouter(prefix="/api/v1/compliance", tags=["compliance"])
 
 @router.get("/cpcb-export")
-def export_cpcb_form2(db: Session = Depends(get_db), format: str = "json"):
-    """
-    Query verified traceability_dataset entries and format records according to CPCB Form-2 guidelines.
-    Returns JSON by default, pass ?format=csv for a downloadable CSV file.
-    """
-    # Join Traceability with Transaction and Recycler datasets to construct the EPR compliance record
-    records = db.query(TraceabilityDataset, TransactionDataset, RecyclerDataset)\
-        .join(TransactionDataset, TraceabilityDataset.transaction_id == TransactionDataset.id)\
-        .join(RecyclerDataset, TransactionDataset.recycler_id == RecyclerDataset.id)\
-        .all()
+def export_cpcb_form2(db: Session = Depends(get_db)):
+    # Query verified transaction records
+    # For Form-2, we need: TraceabilityDataset, TransactionDataset, RecyclerDataset
+    records = db.query(
+        TransactionDataset,
+        TraceabilityDataset,
+        RecyclerDataset
+    ).join(
+        TraceabilityDataset, TransactionDataset.id == TraceabilityDataset.transaction_id
+    ).join(
+        RecyclerDataset, TransactionDataset.recycler_id == RecyclerDataset.id
+    ).all()
+
+    # Generate CSV in-memory
+    stream = io.StringIO()
+    writer = csv.writer(stream)
+    
+    # Form-2 Headers
+    writer.writerow(["FORM-2: FORM FOR MAINTAINING RECORDS OF E-WASTE HANDLED OR GENERATED"])
+    writer.writerow(["[See rules 4(4), 5(4), 8(6), 9(4), 10(7), 11(8), 13(1)(xi) and 13(2)(v)]"])
+    writer.writerow([])
+    
+    # Column headers
+    writer.writerow([
+        "Consignment Tracking ID",
+        "Timestamp (UTC)",
+        "Schedule I EEE Code",
+        "Item Description",
+        "Weight (Metric Tonnes)",
+        "Aggregator ID",
+        "Authorized Recycler Reg No",
+        "SPCB CTO Reference",
+        "SHA-256 Tamper Digest",
+        "Custody Verification Mode"
+    ])
+    
+    for txn, trace, recycler in records:
+        # Resolve category from material_id
+        # Material ID maps to our CATEGORY_MAP keys roughly
+        category_str = str(txn.material_id)
+        cat_info = CATEGORY_MAP.get(category_str, CATEGORY_MAP['1'])
         
-    formatted_records = []
-    for trace, txn, recycler in records:
-        formatted_records.append({
-            "Form2_Reference_ID": f"EPR-{txn.id}-{trace.id}",
-            "Date_Of_Transaction": trace.created_at.strftime("%Y-%m-%d"),
-            "Recycler_Facility_Name": recycler.facility_name,
-            "CPCB_Registry_Number": recycler.registry_number,
-            "Material_Category": f"CAT-{txn.material_id}",
-            "Transaction_Value_INR": txn.amount,
-            "Weight_Kg": txn.weight,
-            "Handover_GPS_Location": trace.location_data,
-            "SHA256_Signature": trace.sha256_hash
-        })
+        # Convert weight (kg) to Metric Tonnes (kg / 1000.0) formatted to 6 decimal places.
+        weight_mt = txn.weight / 1000.0
         
-    if format == "csv":
-        output = io.StringIO()
-        if not formatted_records:
-            return Response(content="No records found.", media_type="text/csv")
-            
-        writer = csv.DictWriter(output, fieldnames=formatted_records[0].keys())
-        writer.writeheader()
-        for row in formatted_records:
-            writer.writerow(row)
-            
-        filename = f"cpcb_form2_export_{datetime.utcnow().date()}.csv"
-        return Response(
-            content=output.getvalue(),
-            media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-        
-    return {"status": "SUCCESS", "cpcb_form2_records": formatted_records}
+        writer.writerow([
+            f"CTN-{txn.id:06d}",
+            trace.created_at.replace(tzinfo=timezone.utc).isoformat() if trace.created_at else "",
+            cat_info['code_eee'],
+            cat_info['name'],
+            f"{weight_mt:.6f}",
+            "AGG-DEMO-01",
+            recycler.registry_number,
+            "CTO-2026-X1", # Dummy SPCB CTO Reference
+            trace.sha256_hash,
+            "DTMF/IVR" if txn.status == "LOCAL_PENDING" else "CRYPTOGRAPHIC_QR"
+        ])
+    
+    response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=cpcb_form2_export.csv"
+    return response
