@@ -45,22 +45,52 @@ class _RecyclerScannerScreenState extends State<RecyclerScannerScreen> {
   }
 
   void _completeHandoverByPin() {
-    final pin = _pinController.text.trim().toUpperCase();
-    if (pin.length == 4) {
+    final entered = _pinController.text.trim();
+    if (entered.length == 4) {
+      final transactionsBox = Hive.box<TransactionModel>('transactionsBox');
       final traceBox = Hive.box<TraceabilityModel>('traceabilityBox');
-      final match = traceBox.values.where((t) => t.sha256Hash.toUpperCase().startsWith(pin)).toList();
-      if (match.isNotEmpty) {
-        final lotId = match.first.lotId;
-        final transactionsBox = Hive.box<TransactionModel>('transactionsBox');
-        final txnMatch = transactionsBox.values.where((t) => t.lotId == lotId).toList();
-        if (txnMatch.isNotEmpty) {
-          _completeHandover(txnMatch.first.txnId);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN: Transaction not found.')));
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN: Hash mismatch.')));
+      
+      // Look up active pending transaction
+      final pendingTxns = transactionsBox.values.where((t) => t.status == 'LOCAL_PENDING').toList();
+      if (pendingTxns.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No active pending transactions found.')));
+        return;
       }
+      
+      final activeTxn = pendingTxns.last; // Assuming the most recent one is the active one
+      final traceMatch = traceBox.values.where((t) => t.lotId == activeTxn.lotId).toList();
+      
+      if (traceMatch.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Traceability data missing.')));
+        return;
+      }
+      
+      final hexHash = traceMatch.first.sha256Hash;
+      
+      // Derive the expected PIN from the stored SHA-256 hex string
+      List<int> digestBytes = [];
+      for (int i = 0; i < hexHash.length; i += 2) {
+        digestBytes.add(int.parse(hexHash.substring(i, i + 2), radix: 16));
+      }
+      int rawUint32 = (digestBytes[0] << 24) | (digestBytes[1] << 16) | (digestBytes[2] << 8) | digestBytes[3];
+      String expected = (rawUint32.abs() % 10000).toString().padLeft(4, '0');
+
+      // Constant-time comparison
+      bool matches = true;
+      if (entered.length != expected.length) matches = false;
+      int diff = 0;
+      for (int i = 0; i < entered.length; i++) {
+        diff |= entered.codeUnitAt(i) ^ expected.codeUnitAt(i);
+      }
+      if (diff != 0) matches = false;
+      
+      if (!matches) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN: Verification failed.')));
+      } else {
+        _completeHandover(activeTxn.txnId);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PIN must be 4 digits.')));
     }
   }
 

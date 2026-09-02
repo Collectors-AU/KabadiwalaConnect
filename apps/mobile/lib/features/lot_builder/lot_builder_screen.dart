@@ -12,6 +12,7 @@ import '../../core/utils/edge_vision_classifier.dart';
 import '../../core/theme/theme.dart';
 import '../../core/constants/app_translations.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/services/voice_service.dart';
 import 'widgets/category_card.dart';
 
 class LotBuilderScreen extends StatefulWidget {
@@ -22,7 +23,6 @@ class LotBuilderScreen extends StatefulWidget {
 }
 
 class _LotBuilderScreenState extends State<LotBuilderScreen> {
-  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   final ImagePicker _picker = ImagePicker();
   final EdgeVisionClassifier _classifier = EdgeVisionClassifier();
@@ -43,55 +43,40 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
   }
 
   void _listen() async {
-    final status = await Permission.microphone.request();
-    if (status.isDenied || status.isPermanentlyDenied) {
-      String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppTranslations.get(lang, 'mic_denied'))),
-      );
-      return;
-    }
-
-    if (!_isListening) {
-      bool available = false;
-      try {
-        available = await _speech.initialize(
-          onStatus: (val) {
-            if (val == 'done' || val == 'notListening') {
-              setState(() => _isListening = false);
-            }
-          },
-          onError: (val) {
-            setState(() => _isListening = false);
-            if (val.errorMsg != 'error_no_match') {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voice error: ${val.errorMsg}')));
-            }
-          },
+    final lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
+    
+    if (!VoiceService.isListening) {
+      bool hasPermission = await VoiceService.ensurePermissions();
+      if (!hasPermission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppTranslations.get(lang, 'mic_permission_needed') ?? 'Microphone permission needed')),
         );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone error.')));
         return;
       }
-
-      if (available) {
-        setState(() => _isListening = true);
-        String localeId = '${Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode}_IN';
-        
-        _speech.listen(
-          localeId: localeId,
-          onResult: (val) {
-            if (val.finalResult) {
-              _processVoiceIntent(val.recognizedWords);
-            }
-          },
-        );
-      } else {
-        String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppTranslations.get(lang, 'mic_denied'))));
-      }
+      
+      if (mounted) setState(() => _isListening = true);
+      String localeId = '${lang}_IN';
+      
+      await VoiceService.startListening(
+        localeId: localeId,
+        onResult: (words) {
+          _processVoiceIntent(words);
+        },
+        onError: (errorMsg) {
+          if (mounted) setState(() => _isListening = false);
+          if (errorMsg != 'error_no_match') {
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Voice error: $errorMsg')));
+          }
+        },
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            if (mounted) setState(() => _isListening = false);
+          }
+        }
+      );
     } else {
-      setState(() => _isListening = false);
-      _speech.stop();
+      if (mounted) setState(() => _isListening = false);
+      await VoiceService.stopListening();
     }
   }
 
@@ -152,8 +137,8 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
 
   void _showSafetyPopup(String category) {
     String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
-    String warningTitle = category == 'BATTERY' ? AppTranslations.get(lang, 'battery_crushing_title') : AppTranslations.get(lang, 'crt_warning_title');
-    String warningDesc = category == 'BATTERY' ? AppTranslations.get(lang, 'battery_crushing_desc') : AppTranslations.get(lang, 'crt_warning_desc');
+    String warningTitle = category == 'BATTERY' ? AppTranslations.get(lang, 'hazard_battery_title') : AppTranslations.get(lang, 'hazard_crt_title');
+    String warningDesc = category == 'BATTERY' ? AppTranslations.get(lang, 'hazard_battery_desc') : AppTranslations.get(lang, 'hazard_crt_desc');
 
     showModalBottomSheet(
       context: context,
@@ -167,7 +152,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 64, color: Colors.deepOrange),
+              const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +160,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                   Expanded(
                     child: Text(
                       warningTitle,
-                      style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                      style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -201,7 +186,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(AppTranslations.get(lang, 'i_understand'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(AppTranslations.get(lang, 'btn_understand'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               )
             ],
           ),
@@ -278,7 +263,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppTranslations.get(lang, 'weight_kg'),
+                  AppTranslations.get(lang, 'weight_label'),
                   style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textLight),
                 ),
                 const SizedBox(height: 10),
@@ -315,7 +300,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                 ),
                 Center(
                   child: Text(
-                    '${lotProvider.approxWeightKg.toStringAsFixed(1)} Kg',
+                    '${lotProvider.approxWeightKg.toStringAsFixed(1)} ${AppTranslations.get(lang, 'unit_kg')}',
                     style: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                   ),
                 ),
@@ -364,7 +349,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        AppTranslations.get(lang, 'create_lot_btn'),
+                        AppTranslations.get(lang, 'btn_create_lot'),
                         style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),

@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers/lot_provider.dart';
 import '../../core/utils/tts_engine.dart';
 import '../../core/theme/theme.dart';
+import '../../core/crypto/handover_signer.dart';
 import '../../core/database/models/transaction_model.dart';
 import '../../core/database/models/traceability_model.dart';
 import '../../core/constants/app_translations.dart';
@@ -44,40 +45,26 @@ class _HandoverScreenState extends State<HandoverScreen> {
       return;
     }
 
-    // Generate Transaction Data
-    const uuid = Uuid();
-    final txnId = uuid.v4();
-    final lotId = uuid.v4();
-    final timestamp = DateTime.now().toUtc().toIso8601String();
-    const gps = "0.0,0.0";
-    const collectorId = "COLLECTOR_DEMO_01";
-    final weight = lotProvider.approxWeightKg;
-    final category = lotProvider.selectedCategoryCode;
+    final signedLot = HandoverSigner.createSignedLot(
+      collectorId: 'COLLECTOR_DEMO_01',
+      categoryCode: lotProvider.selectedCategoryCode!,
+      weightKg: lotProvider.approxWeightKg,
+      valuationInr: lotProvider.estimatedValuation,
+      geohash: '0.0,0.0',
+      deviceSalt: 'DEVICE_SALT_DEMO',
+    );
 
-    // SHA-256 (CollectorID || Timestamp || GPS || Weight || Category)
-    final rawData = '$collectorId$timestamp$gps$weight$category';
-    final bytes = utf8.encode(rawData);
-    final digest = sha256.convert(bytes);
-    _hashHandover = digest.toString();
-
-    // Extract 4-digit PIN from the first 4 uppercase hexadecimal characters of Hash_handover
-    _fourDigitPin = _hashHandover!.substring(0, 4).toUpperCase();
-
-    // Prepare JSON for QR
-    final payload = {
-      'txn_id': txnId,
-      'collector_id': collectorId,
-      'category_code': category,
-      'weight': weight,
-      'estimated_val_inr': lotProvider.estimatedValuation,
-      'sha256_hash': _hashHandover,
-      'pin': _fourDigitPin,
-    };
-    _transactionJson = jsonEncode(payload);
+    _hashHandover = signedLot['sha256_hash'];
+    _fourDigitPin = signedLot['pin'];
+    _transactionJson = jsonEncode(signedLot);
 
     // Save to Hive
     final transactionsBox = Hive.box<TransactionModel>('transactionsBox');
     final traceabilityBox = Hive.box<TraceabilityModel>('traceabilityBox');
+
+    final txnId = signedLot['txn_id'];
+    const uuid = Uuid();
+    final lotId = uuid.v4();
 
     transactionsBox.add(
       TransactionModel(
@@ -100,7 +87,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
         sha256Hash: _hashHandover!,
         latitude: 0.0,
         longitude: 0.0,
-        timestampUtc: DateTime.now().toUtc(),
+        timestampUtc: DateTime.parse(signedLot['timestamp_utc']),
       )
     );
 
