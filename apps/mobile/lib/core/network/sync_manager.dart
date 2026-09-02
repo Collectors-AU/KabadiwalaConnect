@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
@@ -6,15 +8,26 @@ import '../database/models/transaction_model.dart';
 import '../database/models/traceability_model.dart';
 import '../constants/app_constants.dart';
 
+class SyncResult {
+  final bool success;
+  final int count;
+  final String message;
+
+  SyncResult({required this.success, required this.count, required this.message});
+}
+
 class SyncManager {
   static final SyncManager _instance = SyncManager._internal();
   factory SyncManager() => _instance;
   SyncManager._internal();
 
-  static const String SERVER_HOST = "192.168.1.35";
-  final String apiEndpoint = "http://$SERVER_HOST:8000/api/v1/sync";
+  static String serverHost = "192.168.1.29";
+  String get apiEndpoint => "http://$serverHost:8000/api/v1/sync";
 
   void initSyncListener() {
+    // Fire a sync immediately on app boot
+    processOutboxQueue();
+    
     Connectivity().onConnectivityChanged.listen((dynamic result) {
       if (result is List) {
         if (result.contains(ConnectivityResult.mobile) || result.contains(ConnectivityResult.wifi)) {
@@ -28,7 +41,7 @@ class SyncManager {
     });
   }
 
-  Future<void> processOutboxQueue() async {
+  Future<SyncResult> processOutboxQueue() async {
     try {
       final dynamic connectivityResult = await Connectivity().checkConnectivity();
       bool hasConnection = false;
@@ -39,15 +52,15 @@ class SyncManager {
         hasConnection = connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi;
       }
       
-      if (!hasConnection) return;
+      if (!hasConnection) return SyncResult(success: false, count: 0, message: "No internet connection available.");
 
       final transactionsBox = Hive.box<TransactionModel>('transactionsBox');
       final traceBox = Hive.box<TraceabilityModel>('traceabilityBox');
       
-      // Filter LOCAL_PENDING transactions
-      final pendingTxns = transactionsBox.values.where((txn) => txn.status == 'LOCAL_PENDING').toList();
+      // Filter HANDOVER_COMPLETE transactions
+      final pendingTxns = transactionsBox.values.where((txn) => txn.status == 'HANDOVER_COMPLETE').toList();
       
-      if (pendingTxns.isEmpty) return;
+      if (pendingTxns.isEmpty) return SyncResult(success: true, count: 0, message: "No pending transactions to sync.");
 
       final List<Map<String, dynamic>> pendingList = pendingTxns.map((txn) {
         final trace = traceBox.values.firstWhere((t) => t.lotId == txn.lotId);
@@ -77,7 +90,7 @@ class SyncManager {
         Uri.parse(apiEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -91,12 +104,16 @@ class SyncManager {
             successCount++;
           }
         }
-        print('Successfully synced $successCount transactions to server.');
+        return SyncResult(success: true, count: successCount, message: "Successfully synced $successCount transactions to dashboard!");
       } else {
-        print('Failed to sync transactions: Server responded with ${response.statusCode}');
+        return SyncResult(success: false, count: 0, message: "Server Error: ${response.statusCode}");
       }
+    } on SocketException catch (_) {
+      return SyncResult(success: false, count: 0, message: "Network is unreachable (Is serverHost correct?)");
+    } on TimeoutException catch (_) {
+      return SyncResult(success: false, count: 0, message: "Request timed out (Check IP or firewall).");
     } catch (e) {
-      print('Sync error: $e');
+      return SyncResult(success: false, count: 0, message: "Sync error: $e");
     }
   }
 }

@@ -41,6 +41,12 @@ def sync_transactions(payload: SyncPayload, db: Session = Depends(get_db)):
     synced_txn_ids = []
     
     for item in payload.pending_transactions:
+        # Idempotency check: Does this transaction already exist?
+        existing_trace = db.query(TraceabilityDataset).filter(TraceabilityDataset.sha256_hash == item.sha256_hash).first()
+        if existing_trace:
+            synced_txn_ids.append(item.txn_id)
+            continue
+            
         # 1. Check for anomaly
         is_anomalous = detector.is_transaction_anomalous(
             weight=item.approx_weight_kg,
@@ -48,10 +54,9 @@ def sync_transactions(payload: SyncPayload, db: Session = Depends(get_db)):
             cat_id=item.category_code
         )
         
+        status_to_save = "ANOMALOUS_FLAGGED" if is_anomalous else item.status
         if is_anomalous:
             anomalies_flagged += 1
-            # Skip invalid/anomalous records
-            continue
             
         # 2. Insert valid record into transaction_dataset
         try:
@@ -62,6 +67,7 @@ def sync_transactions(payload: SyncPayload, db: Session = Depends(get_db)):
         new_txn = TransactionDataset(
             amount=item.estimated_val_inr,
             weight=item.approx_weight_kg,
+            status=status_to_save,
             material_id=item.category_code,
             recycler_id=1, # Defaulting to first recycler for now
             created_at=created_time

@@ -7,6 +7,7 @@ import '../../core/theme/theme.dart';
 import '../../core/database/models/transaction_model.dart';
 import '../../core/database/models/traceability_model.dart';
 import '../../core/utils/tts_engine.dart';
+import '../../core/network/sync_manager.dart';
 
 class RecyclerScannerScreen extends StatefulWidget {
   const RecyclerScannerScreen({super.key});
@@ -101,6 +102,9 @@ class _RecyclerScannerScreenState extends State<RecyclerScannerScreen> {
       final txn = transactionsBox.values.firstWhere((t) => t.txnId == txnId, orElse: () => transactionsBox.values.last);
       txn.status = 'HANDOVER_COMPLETE';
       txn.save();
+      
+      // Trigger sync immediately
+      SyncManager().processOutboxQueue();
     } catch (e) {
       // Demo logic fallback
     }
