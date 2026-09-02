@@ -12,6 +12,8 @@ import '../../core/utils/tts_engine.dart';
 import '../../core/theme/theme.dart';
 import '../../core/database/models/transaction_model.dart';
 import '../../core/database/models/traceability_model.dart';
+import '../../core/constants/app_translations.dart';
+import '../../core/providers/locale_provider.dart';
 
 class HandoverScreen extends StatefulWidget {
   const HandoverScreen({super.key});
@@ -111,6 +113,8 @@ class _HandoverScreenState extends State<HandoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
+
     if (!_transactionSaved) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -118,7 +122,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
     return Scaffold(
       backgroundColor: AppTheme.offWhite,
       appBar: AppBar(
-        title: Text('Handover', style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+        title: Text(AppTranslations.get(lang, 'handover_title'), style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         centerTitle: true,
       ),
@@ -129,7 +133,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Show this QR to the Recycler',
+                AppTranslations.get(lang, 'show_qr_instruction'),
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 textAlign: TextAlign.center,
               ),
@@ -172,7 +176,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
               ElevatedButton.icon(
                 onPressed: _speakPin,
                 icon: const Icon(Icons.volume_up, color: Colors.white),
-                label: const Text('Listen 4-Digit Audio Code', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: Text(AppTranslations.get(lang, 'listen_pin'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -196,7 +200,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      'Switch to Recycler Scanner Mode',
+                      AppTranslations.get(lang, 'switch_scanner_mode'),
                       style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
