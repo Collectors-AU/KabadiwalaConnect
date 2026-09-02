@@ -12,6 +12,8 @@ import '../../core/utils/tts_engine.dart';
 import '../../core/theme/theme.dart';
 import '../../core/database/models/transaction_model.dart';
 import '../../core/database/models/traceability_model.dart';
+import '../../core/constants/app_translations.dart';
+import '../../core/providers/locale_provider.dart';
 
 class HandoverScreen extends StatefulWidget {
   const HandoverScreen({super.key});
@@ -46,25 +48,29 @@ class _HandoverScreenState extends State<HandoverScreen> {
     const uuid = Uuid();
     final txnId = uuid.v4();
     final lotId = uuid.v4();
-    final timestamp = DateTime.now().toIso8601String();
-    
-    // Extract 4-digit PIN (using last 4 numeric digits or hash segment)
-    _fourDigitPin = (txnId.hashCode.abs() % 10000).toString().padLeft(4, '0');
+    final timestamp = DateTime.now().toUtc().toIso8601String();
+    const gps = "0.0,0.0";
+    const collectorId = "COLLECTOR_DEMO_01";
+    final weight = lotProvider.approxWeightKg;
+    final category = lotProvider.selectedCategoryCode;
 
     // SHA-256 (CollectorID || Timestamp || GPS || Weight || Category)
-    final rawData = 'COLLECTOR_DEMO_01$timestamp${0.0}${lotProvider.approxWeightKg}${lotProvider.selectedCategoryCode}';
+    final rawData = '$collectorId$timestamp$gps$weight$category';
     final bytes = utf8.encode(rawData);
     final digest = sha256.convert(bytes);
     _hashHandover = digest.toString();
 
+    // Extract 4-digit PIN from the first 4 uppercase hexadecimal characters of Hash_handover
+    _fourDigitPin = _hashHandover!.substring(0, 4).toUpperCase();
+
     // Prepare JSON for QR
     final payload = {
-      'txnId': txnId,
-      'lotId': lotId,
-      'category': lotProvider.selectedCategoryCode,
-      'weightKg': lotProvider.approxWeightKg,
-      'valuation': lotProvider.estimatedValuation,
-      'signature': _hashHandover,
+      'txn_id': txnId,
+      'collector_id': collectorId,
+      'category_code': category,
+      'weight': weight,
+      'estimated_val_inr': lotProvider.estimatedValuation,
+      'sha256_hash': _hashHandover,
       'pin': _fourDigitPin,
     };
     _transactionJson = jsonEncode(payload);
@@ -83,6 +89,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
         totalPayoutInr: lotProvider.estimatedValuation,
         paymentMode: 'CASH',
         status: 'LOCAL_PENDING',
+        categoryCode: lotProvider.selectedCategoryCode!,
       )
     );
 
@@ -105,12 +112,14 @@ class _HandoverScreenState extends State<HandoverScreen> {
   void _speakPin() {
     if (_fourDigitPin == null) return;
     
-    String spokenPin = _fourDigitPin!.split('').join(' - ');
+    String spokenPin = _fourDigitPin!.split('').join(' ');
     TTSEngine().speak(spokenPin);
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
+
     if (!_transactionSaved) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -118,7 +127,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
     return Scaffold(
       backgroundColor: AppTheme.offWhite,
       appBar: AppBar(
-        title: Text('Handover', style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+        title: Text(AppTranslations.get(lang, 'handover_title'), style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         centerTitle: true,
       ),
@@ -129,7 +138,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Show this QR to the Recycler',
+                AppTranslations.get(lang, 'show_qr_instruction'),
                 style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 textAlign: TextAlign.center,
               ),
@@ -172,7 +181,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
               ElevatedButton.icon(
                 onPressed: _speakPin,
                 icon: const Icon(Icons.volume_up, color: Colors.white),
-                label: const Text('Listen 4-Digit Audio Code', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: Text(AppTranslations.get(lang, 'listen_pin'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -196,7 +205,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      'Switch to Recycler Scanner Mode',
+                      AppTranslations.get(lang, 'switch_scanner_mode'),
                       style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),

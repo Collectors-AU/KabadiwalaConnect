@@ -6,6 +6,7 @@ import '../../core/database/models/transaction_model.dart';
 import '../../core/theme/theme.dart';
 import '../../core/utils/tts_engine.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/constants/app_translations.dart';
 
 class EarningsLedgerScreen extends StatelessWidget {
   const EarningsLedgerScreen({super.key});
@@ -25,10 +26,12 @@ class EarningsLedgerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
+
     return Scaffold(
       backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
-        title: Text('Earnings Ledger', style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+        title: Text(AppTranslations.get(lang, 'ledger_title'), style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -71,7 +74,7 @@ class EarningsLedgerScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'कुल कमाई / Earnings',
+                          AppTranslations.get(lang, 'total_earnings'),
                           style: GoogleFonts.inter(color: Colors.white70, fontSize: 16),
                         ),
                         IconButton(
@@ -91,14 +94,14 @@ class EarningsLedgerScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Pending Dues', style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
+                            Text(AppTranslations.get(lang, 'pending_dues'), style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
                             Text('₹${pendingDues.toStringAsFixed(0)}', style: GoogleFonts.inter(color: Colors.orangeAccent, fontSize: 18, fontWeight: FontWeight.bold)),
                           ],
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('Lots Completed', style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
+                            Text(AppTranslations.get(lang, 'lots_completed'), style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
                             Text('$completedCount', style: GoogleFonts.inter(color: AppTheme.successGreen, fontSize: 18, fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -140,12 +143,17 @@ class EarningsLedgerScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  txn.status == 'LOCAL_PENDING' ? 'Lot (Pending)' : 'Lot (Completed)',
+                                  AppTranslations.get(lang, '${txn.categoryCode}_vernacular'),
                                   style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Weight: ${txn.finalWeightKg.toStringAsFixed(1)} kg',
+                                  txn.status == 'LOCAL_PENDING' ? AppTranslations.get(lang, 'lot_pending') : AppTranslations.get(lang, 'lot_completed'),
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBlue),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${AppTranslations.get(lang, 'weight_kg')}: ${txn.finalWeightKg.toStringAsFixed(1)} kg',
                                   style: GoogleFonts.inter(color: AppTheme.textLight, fontSize: 14),
                                 ),
                               ],
@@ -166,7 +174,7 @@ class EarningsLedgerScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isCompleted ? 'PAID' : 'PENDING',
+                                  isCompleted ? AppTranslations.get(lang, 'paid') : AppTranslations.get(lang, 'pending'),
                                   style: GoogleFonts.inter(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,

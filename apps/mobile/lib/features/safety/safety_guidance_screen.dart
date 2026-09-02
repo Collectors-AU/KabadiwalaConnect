@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme.dart';
 import '../../core/utils/tts_engine.dart';
+import '../../core/utils/tts_engine.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/constants/app_translations.dart';
 
 class SafetyGuidanceScreen extends StatelessWidget {
   const SafetyGuidanceScreen({super.key});
@@ -19,10 +21,12 @@ class SafetyGuidanceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
+
     return Scaffold(
       backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
-        title: Text('Safety Guidance', style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+        title: Text(AppTranslations.get(lang, 'safety_title'), style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -32,35 +36,35 @@ class SafetyGuidanceScreen extends StatelessWidget {
         children: [
           _buildHazardCard(
             context: context,
-            title: 'Cable Burning Hazard',
+            title: AppTranslations.get(lang, 'cable_burning_title'),
             icon: Icons.local_fire_department,
             color: Colors.redAccent,
-            description: 'Open burning of cables releases toxic smoke. Please use formal wire stripping methods.',
-            hiText: 'तारों को जलाने से जहरीला धुआं निकलता है। कृपया तार छीलने के सुरक्षित तरीकों का उपयोग करें।',
-            mrText: 'वायर जाळल्याने विषारी धूर निघतो. कृपया वायर सोलण्याच्या सुरक्षित पद्धती वापरा.',
-            enText: 'Open burning of cables releases toxic smoke. Please use formal wire stripping methods.',
+            description: AppTranslations.get(lang, 'cable_burning_desc'),
+            hiText: AppTranslations.get('hi', 'cable_burning_desc'),
+            mrText: AppTranslations.get('mr', 'cable_burning_desc'),
+            enText: AppTranslations.get('en', 'cable_burning_desc'),
           ),
           const SizedBox(height: 16),
           _buildHazardCard(
             context: context,
-            title: 'Acid Leaching Hazard',
+            title: AppTranslations.get(lang, 'acid_leaching_title'),
             icon: Icons.science,
             color: Colors.orange,
-            description: 'Improper acid use causes water pollution. We recommend formal hydrometallurgy extraction.',
-            hiText: 'गलत तरीके से एसिड के उपयोग से जल प्रदूषण होता है। सुरक्षित निष्कर्षण की सिफारिश की जाती है।',
-            mrText: 'चुकीच्या पद्धतीने ॲसिड वापरल्यास जलप्रदूषण होते. सुरक्षित काढण्याची शिफारस केली जाते.',
-            enText: 'Improper acid use causes water pollution. We recommend formal hydrometallurgy extraction.',
+            description: AppTranslations.get(lang, 'acid_leaching_desc'),
+            hiText: AppTranslations.get('hi', 'acid_leaching_desc'),
+            mrText: AppTranslations.get('mr', 'acid_leaching_desc'),
+            enText: AppTranslations.get('en', 'acid_leaching_desc'),
           ),
           const SizedBox(height: 16),
           _buildHazardCard(
             context: context,
-            title: 'Battery Crushing Hazard',
+            title: AppTranslations.get(lang, 'battery_crushing_title'),
             icon: Icons.battery_alert,
             color: Colors.deepOrange,
-            description: 'Crushing batteries poses a lithium fire risk. Hand over in sealed containers.',
-            hiText: 'बैटरी कुचलने से आग लगने का खतरा होता है। इन्हें सुरक्षित कंटेनरों में सौंपें।',
-            mrText: 'बॅटरी फोडल्यास आग लागण्याचा धोका असतो. ते सुरक्षित कंटेनरमध्ये द्या.',
-            enText: 'Crushing batteries poses a lithium fire risk. Hand over in sealed containers.',
+            description: AppTranslations.get(lang, 'battery_crushing_desc'),
+            hiText: AppTranslations.get('hi', 'battery_crushing_desc'),
+            mrText: AppTranslations.get('mr', 'battery_crushing_desc'),
+            enText: AppTranslations.get('en', 'battery_crushing_desc'),
           ),
         ],
       ),

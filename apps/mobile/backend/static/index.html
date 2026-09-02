@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recycler Web Dashboard - KabadiwalaConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Recycler Web Dashboard</h1>
+        
+        <!-- Anomaly Alert Banner -->
+        <div id="anomaly-banner" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8 hidden" role="alert">
+            <p class="font-bold">Anomaly Detected!</p>
+            <p id="anomaly-text">Flagged transactions have been identified by our IsolationForest model.</p>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                <h3 class="text-gray-500 text-sm font-semibold uppercase tracking-wider">Total Recycled Weight</h3>
+                <p id="stat-weight" class="text-3xl font-bold text-gray-800 mt-2">Loading...</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                <h3 class="text-gray-500 text-sm font-semibold uppercase tracking-wider">Total EPR Credit Value</h3>
+                <p id="stat-value" class="text-3xl font-bold text-gray-800 mt-2">Loading...</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+                <h3 class="text-gray-500 text-sm font-semibold uppercase tracking-wider">Active Collectors</h3>
+                <p id="stat-collectors" class="text-3xl font-bold text-gray-800 mt-2">Loading...</p>
+            </div>
+        </div>
+
+        <!-- CPCB Compliance Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8 flex flex-col md:flex-row items-center justify-between">
+            <div class="mb-4 md:mb-0">
+                <h2 class="text-xl font-bold text-gray-800">CPCB Compliance</h2>
+                <p class="text-gray-600 mt-1">Export your Extended Producer Responsibility (EPR) credit logs as required by the CPCB Form-2 guidelines.</p>
+            </div>
+            <a href="/api/v1/compliance/cpcb-export?format=csv" download class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition duration-200">
+                Download CPCB Form-2 Audit Log
+            </a>
+        </div>
+
+        <!-- Live Transaction Feed -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800">Live Transaction Feed</h2>
+                <button onclick="populateTransactions()" class="text-sm text-blue-600 hover:text-blue-800">Refresh Data</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Txn ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collector ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight (kg)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Payout</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SHA256 Hash</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-feed" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows will be injected here via JS -->
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Loading feed...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch dashboard stats
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/v1/dashboard/stats');
+                const data = await response.json();
+                
+                document.getElementById('stat-weight').innerText = `${data.total_recycled_weight_kg} kg`;
+                document.getElementById('stat-value').innerText = `₹ ${data.total_epr_credit_value_inr}`;
+                document.getElementById('stat-collectors').innerText = data.active_collectors_count;
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+                document.getElementById('stat-weight').innerText = "N/A";
+                document.getElementById('stat-value').innerText = "N/A";
+                document.getElementById('stat-collectors').innerText = "N/A";
+            }
+        }
+
+        // Fetch and populate transactions dynamically
+        async function populateTransactions() {
+            const tbody = document.getElementById('transaction-feed');
+            tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Loading feed...</td></tr>';
+            
+            try {
+                const response = await fetch('/api/v1/dashboard/transactions');
+                const txns = await response.json();
+                
+                tbody.innerHTML = '';
+                
+                if (txns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No transactions found</td></tr>';
+                    document.getElementById('anomaly-banner').classList.add('hidden');
+                    return;
+                }
+                
+                let hasAnomaly = false;
+                let anomalyCount = 0;
+
+                txns.forEach(txn => {
+                    if (txn.isAnomaly) {
+                        hasAnomaly = true;
+                        anomalyCount++;
+                    }
+                    
+                    const tr = document.createElement('tr');
+                    const statusBadge = txn.isAnomaly 
+                        ? `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Flagged (Anomaly)</span>`
+                        : `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>`;
+                        
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${txn.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${txn.collector_id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${txn.category}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${txn.weight}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${txn.payout}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${txn.hash}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                if (hasAnomaly) {
+                    const banner = document.getElementById('anomaly-banner');
+                    banner.classList.remove('hidden');
+                    document.getElementById('anomaly-text').innerText = `${anomalyCount} transaction(s) flagged as anomalous by the IsolationForest model.`;
+                } else {
+                    document.getElementById('anomaly-banner').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error fetching transactions:", error);
+                tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Failed to load transactions</td></tr>';
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStats();
+            populateTransactions();
+        });
+    </script>
+</body>
+</html>

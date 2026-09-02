@@ -29,6 +29,7 @@ class TransactionDataset(Base):
     __tablename__ = "transaction_dataset"
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float)
+    weight = Column(Float)
     material_id = Column(Integer, ForeignKey("material_dataset.id"))
     recycler_id = Column(Integer, ForeignKey("recycler_dataset.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -38,6 +39,7 @@ class TraceabilityDataset(Base):
     id = Column(Integer, primary_key=True, index=True)
     transaction_id = Column(Integer, ForeignKey("transaction_dataset.id"))
     location_data = Column(String)
+    sha256_hash = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class CollectorDataset(Base):

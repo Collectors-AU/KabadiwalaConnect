@@ -3,6 +3,9 @@ import '../lot_builder/lot_builder_screen.dart';
 import '../../core/theme/theme.dart';
 import '../ledger/earnings_ledger_screen.dart';
 import '../safety/safety_guidance_screen.dart';
+import '../../core/constants/app_translations.dart';
+import '../../core/providers/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key});
@@ -23,6 +26,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
+
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -33,22 +38,22 @@ class _MainShellScreenState extends State<MainShellScreen> {
         unselectedItemColor: Colors.grey,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         type: BottomNavigationBarType.fixed,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.build_circle),
-            label: 'Lot Builder',
+            icon: const Icon(Icons.build_circle),
+            label: AppTranslations.get(lang, 'lot_builder_title'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Price Board',
+            icon: const Icon(Icons.analytics),
+            label: AppTranslations.get(lang, 'price_board_title'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Ledger',
+            icon: const Icon(Icons.account_balance_wallet),
+            label: AppTranslations.get(lang, 'ledger_title'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.health_and_safety),
-            label: 'Safety',
+            icon: const Icon(Icons.health_and_safety),
+            label: AppTranslations.get(lang, 'safety_title'),
           ),
         ],
       ),

@@ -10,6 +10,9 @@ import '../../core/utils/tts_engine.dart';
 import '../../core/utils/voice_intent_parser.dart';
 import '../../core/utils/edge_vision_classifier.dart';
 import '../../core/theme/theme.dart';
+import '../../core/constants/app_translations.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'widgets/category_card.dart';
 
 class LotBuilderScreen extends StatefulWidget {
   const LotBuilderScreen({super.key});
@@ -40,6 +43,15 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
   }
 
   void _listen() async {
+    final status = await Permission.microphone.request();
+    if (status.isDenied || status.isPermanentlyDenied) {
+      String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppTranslations.get(lang, 'mic_denied'))),
+      );
+      return;
+    }
+
     if (!_isListening) {
       bool available = false;
       try {
@@ -57,7 +69,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
           },
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission denied.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone error.')));
         return;
       }
 
@@ -74,7 +86,8 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
           },
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Microphone permission denied.')));
+        String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppTranslations.get(lang, 'mic_denied'))));
       }
     } else {
       setState(() => _isListening = false);
@@ -90,6 +103,9 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
     if (intent.categoryCode != null) {
       lotProvider.setCategoryCode(intent.categoryCode!);
       updated = true;
+      if (intent.categoryCode == 'BATTERY' || intent.categoryCode == 'CRT') {
+        _showSafetyPopup(intent.categoryCode!);
+      }
     }
     if (intent.weightKg != null) {
       lotProvider.setWeight(intent.weightKg!);
@@ -121,6 +137,10 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
         else if (lang == 'mr') textToSpeak = "AI ने ${result.categoryCode} ओळखले आहे";
         
         TTSEngine().speak(textToSpeak);
+
+        if (result.categoryCode == 'BATTERY' || result.categoryCode == 'CRT') {
+          _showSafetyPopup(result.categoryCode);
+        }
       } else {
         // Fallback to manual selection gracefully
       }
@@ -130,14 +150,75 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
     }
   }
 
+  void _showSafetyPopup(String category) {
+    String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
+    String warningTitle = category == 'BATTERY' ? AppTranslations.get(lang, 'battery_crushing_title') : AppTranslations.get(lang, 'crt_warning_title');
+    String warningDesc = category == 'BATTERY' ? AppTranslations.get(lang, 'battery_crushing_desc') : AppTranslations.get(lang, 'crt_warning_desc');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning_amber_rounded, size: 64, color: Colors.deepOrange),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      warningTitle,
+                      style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.volume_up, color: AppTheme.primaryBlue, size: 28),
+                    onPressed: () {
+                      TTSEngine().speak(warningDesc);
+                    },
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                warningDesc,
+                style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textDark, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(AppTranslations.get(lang, 'i_understand'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lotProvider = Provider.of<LotProvider>(context);
+    final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
 
     return Scaffold(
       backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
-        title: Text('Lot Builder', style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+        title: Text(AppTranslations.get(lang, 'lot_builder_title'), style: GoogleFonts.playfairDisplay(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -171,38 +252,16 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                 final category = AppConstants.eWasteCategories[index];
                 final isSelected = lotProvider.selectedCategoryCode == category;
 
-                return GestureDetector(
+                return CategoryCard(
+                  categoryCode: category,
+                  isSelected: isSelected,
                   onTap: () {
                     lotProvider.setCategoryCode(category);
                     _announceValuation(lotProvider, category);
+                    if (category == 'BATTERY' || category == 'CRT') {
+                      _showSafetyPopup(category);
+                    }
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected ? AppTheme.successGreen : Colors.transparent,
-                        width: isSelected ? 4 : 0,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        category,
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
@@ -219,7 +278,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Weight (Kg)',
+                  AppTranslations.get(lang, 'weight_kg'),
                   style: GoogleFonts.inter(fontSize: 16, color: AppTheme.textLight),
                 ),
                 const SizedBox(height: 10),
@@ -271,10 +330,22 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.2)),
                   ),
-                  child: Text(
-                    'अनुमानित मूल्य: ₹${lotProvider.estimatedValuation.toStringAsFixed(0)}',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${AppTranslations.get(lang, 'estimated_value')} ₹${lotProvider.estimatedValuation.toStringAsFixed(0)}',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        AppTranslations.get(lang, 'base_price_breakdown')
+                            .replaceAll('@basePrice', lotProvider.currentBasePrice.toStringAsFixed(0))
+                            .replaceAll('@eprBonus', lotProvider.currentEprBonus.toStringAsFixed(0)),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 12, color: AppTheme.textLight),
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -293,7 +364,7 @@ class _LotBuilderScreenState extends State<LotBuilderScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        'Create Lot & Generate QR',
+                        AppTranslations.get(lang, 'create_lot_btn'),
                         style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),

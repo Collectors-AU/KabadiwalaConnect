@@ -3,15 +3,24 @@ import 'package:hive/hive.dart';
 import '../database/models/price_model.dart';
 
 class LotProvider extends ChangeNotifier {
-  String? _selectedCategoryCode;
+  String? _selectedCategoryCode = 'CABLE';
   double _approxWeightKg = 5.0;
   String _conditionGrade = 'INTACT'; // or 'DISMANTLED'
   double _estimatedValuation = 0.0;
+  
+  double _currentBasePrice = 0.0;
+  double _currentEprBonus = 0.0;
+
+  LotProvider() {
+    _calculateValuation();
+  }
 
   String? get selectedCategoryCode => _selectedCategoryCode;
   double get approxWeightKg => _approxWeightKg;
   String get conditionGrade => _conditionGrade;
   double get estimatedValuation => _estimatedValuation;
+  double get currentBasePrice => _currentBasePrice;
+  double get currentEprBonus => _currentEprBonus;
 
   void setCategoryCode(String categoryCode) {
     _selectedCategoryCode = categoryCode;
@@ -31,27 +40,28 @@ class LotProvider extends ChangeNotifier {
   void _calculateValuation() {
     if (_selectedCategoryCode == null) {
       _estimatedValuation = 0.0;
+      _currentBasePrice = 0.0;
+      _currentEprBonus = 0.0;
       notifyListeners();
       return;
     }
 
-    final pricesBox = Hive.box<PriceModel>('pricesBox');
-    
-    // Find price for category
-    double basePrice = 0.0;
     try {
+      final pricesBox = Hive.box<PriceModel>('pricesBox');
       final priceModel = pricesBox.values.firstWhere(
         (element) => element.categoryCode == _selectedCategoryCode,
       );
-      basePrice = priceModel.marketBuyingPrice + (priceModel.eprBonusOffset ?? 0.0);
+      _currentBasePrice = priceModel.marketBuyingPrice;
+      _currentEprBonus = priceModel.eprBonusOffset ?? 0.0;
     } catch (e) {
-      // Fallback if not found
-      basePrice = 0.0;
+      _currentBasePrice = 0.0;
+      _currentEprBonus = 0.0;
     }
 
+    double totalRate = _currentBasePrice + _currentEprBonus;
     double conditionMultiplier = (_conditionGrade == 'INTACT') ? 1.0 : 0.85;
 
-    _estimatedValuation = _approxWeightKg * basePrice * conditionMultiplier;
+    _estimatedValuation = _approxWeightKg * totalRate * conditionMultiplier;
     notifyListeners();
   }
 }
