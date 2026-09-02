@@ -48,25 +48,29 @@ class _HandoverScreenState extends State<HandoverScreen> {
     const uuid = Uuid();
     final txnId = uuid.v4();
     final lotId = uuid.v4();
-    final timestamp = DateTime.now().toIso8601String();
-    
-    // Extract 4-digit PIN (using last 4 numeric digits or hash segment)
-    _fourDigitPin = (txnId.hashCode.abs() % 10000).toString().padLeft(4, '0');
+    final timestamp = DateTime.now().toUtc().toIso8601String();
+    const gps = "0.0,0.0";
+    const collectorId = "COLLECTOR_DEMO_01";
+    final weight = lotProvider.approxWeightKg;
+    final category = lotProvider.selectedCategoryCode;
 
     // SHA-256 (CollectorID || Timestamp || GPS || Weight || Category)
-    final rawData = 'COLLECTOR_DEMO_01$timestamp${0.0}${lotProvider.approxWeightKg}${lotProvider.selectedCategoryCode}';
+    final rawData = '$collectorId$timestamp$gps$weight$category';
     final bytes = utf8.encode(rawData);
     final digest = sha256.convert(bytes);
     _hashHandover = digest.toString();
 
+    // Extract 4-digit PIN from the first 4 uppercase hexadecimal characters of Hash_handover
+    _fourDigitPin = _hashHandover!.substring(0, 4).toUpperCase();
+
     // Prepare JSON for QR
     final payload = {
-      'txnId': txnId,
-      'lotId': lotId,
-      'category': lotProvider.selectedCategoryCode,
-      'weightKg': lotProvider.approxWeightKg,
-      'valuation': lotProvider.estimatedValuation,
-      'signature': _hashHandover,
+      'txn_id': txnId,
+      'collector_id': collectorId,
+      'category_code': category,
+      'weight': weight,
+      'estimated_val_inr': lotProvider.estimatedValuation,
+      'sha256_hash': _hashHandover,
       'pin': _fourDigitPin,
     };
     _transactionJson = jsonEncode(payload);
@@ -85,6 +89,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
         totalPayoutInr: lotProvider.estimatedValuation,
         paymentMode: 'CASH',
         status: 'LOCAL_PENDING',
+        categoryCode: lotProvider.selectedCategoryCode!,
       )
     );
 
@@ -107,7 +112,7 @@ class _HandoverScreenState extends State<HandoverScreen> {
   void _speakPin() {
     if (_fourDigitPin == null) return;
     
-    String spokenPin = _fourDigitPin!.split('').join(' - ');
+    String spokenPin = _fourDigitPin!.split('').join(' ');
     TTSEngine().speak(spokenPin);
   }
 

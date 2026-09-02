@@ -143,8 +143,13 @@ class EarningsLedgerScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  txn.status == 'LOCAL_PENDING' ? AppTranslations.get(lang, 'lot_pending') : AppTranslations.get(lang, 'lot_completed'),
+                                  AppTranslations.get(lang, '${txn.categoryCode}_vernacular'),
                                   style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  txn.status == 'LOCAL_PENDING' ? AppTranslations.get(lang, 'lot_pending') : AppTranslations.get(lang, 'lot_completed'),
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryBlue),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(

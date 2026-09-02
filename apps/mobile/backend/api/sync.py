@@ -61,6 +61,7 @@ def sync_transactions(payload: SyncPayload, db: Session = Depends(get_db)):
             
         new_txn = TransactionDataset(
             amount=item.estimated_val_inr,
+            weight=item.approx_weight_kg,
             material_id=item.category_code,
             recycler_id=1, # Defaulting to first recycler for now
             created_at=created_time
@@ -72,6 +73,7 @@ def sync_transactions(payload: SyncPayload, db: Session = Depends(get_db)):
         new_trace = TraceabilityDataset(
             transaction_id=new_txn.id,
             location_data=item.handover_gps,
+            sha256_hash=item.sha256_hash,
             created_at=created_time
         )
         db.add(new_trace)

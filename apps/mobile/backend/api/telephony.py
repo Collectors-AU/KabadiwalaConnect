@@ -10,9 +10,9 @@ from core.models import TransactionDataset, CollectorDataset, AIMLDataset
 router = APIRouter(prefix="/api/v1/telephony", tags=["telephony"])
 
 class IVRPayload(BaseModel):
-    caller_phone: str
-    category_dtmf: int
-    weight_dtmf: float
+    caller_phone_number: str
+    dtmf_category_choice: int
+    approx_weight_kg: float
 
 class IVRResponse(BaseModel):
     status: str
@@ -22,7 +22,7 @@ class IVRResponse(BaseModel):
 @router.post("/ivr", response_model=IVRResponse)
 def handle_ivr_webhook(payload: IVRPayload, db: Session = Depends(get_db)):
     # Hash caller phone for privacy
-    phone_hash = hashlib.sha256(payload.caller_phone.encode()).hexdigest()
+    phone_hash = hashlib.sha256(payload.caller_phone_number.encode()).hexdigest()
     
     # Find or create collector log with the phone hash
     collector = db.query(CollectorDataset).filter(CollectorDataset.phone_number == phone_hash).first()
@@ -44,19 +44,20 @@ def handle_ivr_webhook(payload: IVRPayload, db: Session = Depends(get_db)):
     
     # Simple estimate fallback for IVR inputs
     unit_price = 100.0 # baseline fallback
-    if payload.category_dtmf == 1:
+    if payload.dtmf_category_choice == 1:
         unit_price = 425.0
-    elif payload.category_dtmf == 2:
+    elif payload.dtmf_category_choice == 2:
         unit_price = 208.0
-    elif payload.category_dtmf == 3:
+    elif payload.dtmf_category_choice == 3:
         unit_price = 83.0
         
-    estimated_val = payload.weight_dtmf * unit_price
+    estimated_val = payload.approx_weight_kg * unit_price
     
     # Log the lot and save to transaction_dataset
     new_txn = TransactionDataset(
         amount=estimated_val,
-        material_id=payload.category_dtmf,
+        weight=payload.approx_weight_kg,
+        material_id=payload.dtmf_category_choice,
         recycler_id=1, # Default mock recycler
         created_at=datetime.utcnow()
     )
@@ -67,5 +68,5 @@ def handle_ivr_webhook(payload: IVRPayload, db: Session = Depends(get_db)):
     return IVRResponse(
         status="SUCCESS",
         transaction_id=new_txn.id,
-        message=f"Logged {payload.weight_dtmf}kg for category {payload.category_dtmf} using stock image reference."
+        message=f"Logged {payload.approx_weight_kg}kg for category {payload.dtmf_category_choice} using stock image reference."
     )

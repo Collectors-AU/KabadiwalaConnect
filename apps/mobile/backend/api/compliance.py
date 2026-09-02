@@ -30,7 +30,9 @@ def export_cpcb_form2(db: Session = Depends(get_db), format: str = "json"):
             "CPCB_Registry_Number": recycler.registry_number,
             "Material_Category": f"CAT-{txn.material_id}",
             "Transaction_Value_INR": txn.amount,
-            "Handover_GPS_Location": trace.location_data
+            "Weight_Kg": txn.weight,
+            "Handover_GPS_Location": trace.location_data,
+            "SHA256_Signature": trace.sha256_hash
         })
         
     if format == "csv":

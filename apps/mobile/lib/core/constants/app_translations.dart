@@ -44,7 +44,11 @@ class AppTranslations {
       'acid_leaching_title': 'Acid Leaching Hazard',
       'acid_leaching_desc': 'Improper acid use causes water pollution. We recommend formal hydrometallurgy extraction.',
       'battery_crushing_title': 'Battery Crushing Hazard',
-      'battery_crushing_desc': 'Crushing batteries poses a lithium fire risk. Hand over in sealed containers.',
+      'battery_crushing_desc': 'Warning: Do not open lithium batteries. Danger of fire and chemical burns.',
+      'crt_warning_title': 'CRT Toxic Hazard',
+      'crt_warning_desc': 'Warning: CRT monitors contain lead and toxic phosphorus. Do not break the glass.',
+      'mic_denied': 'Voice assistant requires microphone permission.',
+      'i_understand': 'I Understand',
     },
     'hi': {
       'lot_builder_title': 'लॉट बनाएं',
@@ -90,7 +94,11 @@ class AppTranslations {
       'acid_leaching_title': 'एसिड प्रदूषण का खतरा',
       'acid_leaching_desc': 'गलत तरीके से एसिड के उपयोग से जल प्रदूषण होता है। सुरक्षित निष्कर्षण की सिफारिश की जाती है।',
       'battery_crushing_title': 'बैटरी कुचलने का खतरा',
-      'battery_crushing_desc': 'बैटरी कुचलने से आग लगने का खतरा होता है। इन्हें सुरक्षित कंटेनरों में सौंपें।',
+      'battery_crushing_desc': 'चेतावनी: लिथियम बैटरी न खोलें। आग और रासायनिक जलन का खतरा।',
+      'crt_warning_title': 'सीआरटी जहरीला खतरा',
+      'crt_warning_desc': 'चेतावनी: सीआरटी मॉनिटर में सीसा होता है। कांच न तोड़ें।',
+      'mic_denied': 'वॉयस असिस्टेंट को माइक्रोफ़ोन की अनुमति चाहिए।',
+      'i_understand': 'I Understand / आगे बढ़ें',
     },
     'mr': {
       'lot_builder_title': 'लॉट तयार करा',
@@ -136,7 +144,11 @@ class AppTranslations {
       'acid_leaching_title': 'ऍसिड प्रदूषण धोका',
       'acid_leaching_desc': 'चुकीच्या पद्धतीने ऍसिड वापरल्यास जलप्रदूषण होते. सुरक्षित काढण्याची शिफारस केली जाते.',
       'battery_crushing_title': 'बॅटरी फोडण्याचा धोका',
-      'battery_crushing_desc': 'बॅटरी फोडल्यास आग लागण्याचा धोका असतो. ते सुरक्षित कंटेनरमध्ये द्या.',
+      'battery_crushing_desc': 'चेतावणी: लिथियम बॅटरी उघडू नका. आग आणि रासायनिक जळण्याचा धोका.',
+      'crt_warning_title': 'सीआरटी विषारी धोका',
+      'crt_warning_desc': 'चेतावणी: सीआरटी मॉनिटरमध्ये शिसे असते. काच फोडू नका.',
+      'mic_denied': 'व्हॉइस असिस्टंटला मायक्रोफोनची परवानगी आवश्यक आहे.',
+      'i_understand': 'I Understand / पुढे जा',
     }
   };
 

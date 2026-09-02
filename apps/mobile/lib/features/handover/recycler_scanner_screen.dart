@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import '../../core/theme/theme.dart';
 import '../../core/database/models/transaction_model.dart';
+import '../../core/database/models/traceability_model.dart';
 import '../../core/utils/tts_engine.dart';
 
 class RecyclerScannerScreen extends StatefulWidget {
@@ -26,9 +27,15 @@ class _RecyclerScannerScreenState extends State<RecyclerScannerScreen> {
       if (barcode.rawValue != null) {
         try {
           final payload = jsonDecode(barcode.rawValue!);
-          if (payload['txnId'] != null && payload['signature'] != null) {
-            _completeHandover(payload['txnId']);
-            break;
+          if (payload['txn_id'] != null && payload['sha256_hash'] != null) {
+            final traceBox = Hive.box<TraceabilityModel>('traceabilityBox');
+            final match = traceBox.values.where((t) => t.sha256Hash == payload['sha256_hash']).toList();
+            if (match.isNotEmpty) {
+              _completeHandover(payload['txn_id']);
+              break;
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid QR: Hash mismatch.')));
+            }
           }
         } catch (e) {
           // Invalid QR Code format
@@ -38,11 +45,22 @@ class _RecyclerScannerScreenState extends State<RecyclerScannerScreen> {
   }
 
   void _completeHandoverByPin() {
-    final pin = _pinController.text.trim();
+    final pin = _pinController.text.trim().toUpperCase();
     if (pin.length == 4) {
-      // Find transaction by PIN heuristics or scan recent locally
-      // For MVP Demo, we just succeed
-      _completeHandover('demo_txn_id');
+      final traceBox = Hive.box<TraceabilityModel>('traceabilityBox');
+      final match = traceBox.values.where((t) => t.sha256Hash.toUpperCase().startsWith(pin)).toList();
+      if (match.isNotEmpty) {
+        final lotId = match.first.lotId;
+        final transactionsBox = Hive.box<TransactionModel>('transactionsBox');
+        final txnMatch = transactionsBox.values.where((t) => t.lotId == lotId).toList();
+        if (txnMatch.isNotEmpty) {
+          _completeHandover(txnMatch.first.txnId);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN: Transaction not found.')));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid PIN: Hash mismatch.')));
+      }
     }
   }
 

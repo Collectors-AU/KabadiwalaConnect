@@ -28,6 +28,9 @@ class TransactionModel extends HiveObject {
   @HiveField(7)
   String status;
 
+  @HiveField(8, defaultValue: 'CABLE')
+  String categoryCode;
+
   TransactionModel({
     required this.txnId,
     required this.lotId,
@@ -37,5 +40,6 @@ class TransactionModel extends HiveObject {
     required this.totalPayoutInr,
     required this.paymentMode,
     required this.status,
+    this.categoryCode = 'CABLE',
   });
 }

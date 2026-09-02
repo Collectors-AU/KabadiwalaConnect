@@ -25,13 +25,14 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       totalPayoutInr: fields[5] as double,
       paymentMode: fields[6] as String,
       status: fields[7] as String,
+      categoryCode: fields[8] == null ? 'CABLE' : fields[8] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, TransactionModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.txnId)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       ..writeByte(6)
       ..write(obj.paymentMode)
       ..writeByte(7)
-      ..write(obj.status);
+      ..write(obj.status)
+      ..writeByte(8)
+      ..write(obj.categoryCode);
   }
 
   @override
