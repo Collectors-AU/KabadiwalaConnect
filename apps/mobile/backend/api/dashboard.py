@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from core.database import get_db
-from core.models import TransactionDataset, CollectorDataset
+from core.models import TransactionDataset, CollectorDataset, TraceabilityDataset
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
 
@@ -39,28 +39,25 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 
 @router.get("/transactions")
 def get_recent_transactions(db: Session = Depends(get_db)):
-    txns = db.query(TransactionDataset).order_by(TransactionDataset.created_at.desc()).limit(10).all()
+    records = db.query(
+        TransactionDataset, TraceabilityDataset
+    ).outerjoin(
+        TraceabilityDataset, TransactionDataset.id == TraceabilityDataset.transaction_id
+    ).order_by(TransactionDataset.created_at.desc()).limit(10).all()
+    
     result = []
-    for txn in txns:
-        unit_price = 100.0
-        if txn.material_id == 1:
-            unit_price = 425.0
-        elif txn.material_id == 2:
-            unit_price = 208.0
-        elif txn.material_id == 3:
-            unit_price = 83.0
-            
-        weight = txn.amount / unit_price
-        fake_hash = hashlib.sha256(str(txn.id).encode()).hexdigest()[:12] + "..."
+    for txn, trace in records:
+        real_hash = trace.sha256_hash if trace else "N/A"
+        is_anomaly = (txn.status == "ANOMALOUS_FLAGGED")
         
         result.append({
             "id": f"TXN-{txn.id}",
             "collector_id": "Mobile App Sync",
             "category": f"CAT-{txn.material_id}",
-            "weight": round(weight, 2),
+            "weight": round(txn.weight, 2) if txn.weight else 0.0,
             "payout": f"₹{txn.amount}",
-            "hash": fake_hash,
-            "status": "Verified",
-            "isAnomaly": False
+            "hash": real_hash[:12] + "..." if real_hash != "N/A" else "N/A",
+            "status": txn.status if txn.status else "Verified",
+            "isAnomaly": is_anomaly
         })
     return result

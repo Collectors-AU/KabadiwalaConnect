@@ -8,9 +8,16 @@ import '../../core/utils/tts_engine.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/constants/app_translations.dart';
 
-class EarningsLedgerScreen extends StatelessWidget {
+import '../../core/network/sync_manager.dart';
+
+class EarningsLedgerScreen extends StatefulWidget {
   const EarningsLedgerScreen({super.key});
 
+  @override
+  State<EarningsLedgerScreen> createState() => _EarningsLedgerScreenState();
+}
+
+class _EarningsLedgerScreenState extends State<EarningsLedgerScreen> {
   void _speakFinancialSummary(BuildContext context, double totalCash, double pendingDues) {
     String lang = Provider.of<LocaleProvider>(context, listen: false).currentLocale.languageCode;
     String textToSpeak = "Total earnings are ${totalCash.toStringAsFixed(0)} Rupees. Pending dues are ${pendingDues.toStringAsFixed(0)} Rupees.";
@@ -24,6 +31,51 @@ class EarningsLedgerScreen extends StatelessWidget {
     TTSEngine().speak(textToSpeak);
   }
 
+  void _showConfigDialog() {
+    final TextEditingController hostController = TextEditingController(text: SyncManager.serverHost);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Configure Backend IP'),
+          content: TextField(
+            controller: hostController,
+            decoration: const InputDecoration(labelText: 'Server IP Address'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                SyncManager.serverHost = hostController.text.trim();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('IP Updated to ${SyncManager.serverHost}')));
+              },
+              child: const Text('Save'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _triggerManualSync() async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing with dashboard...')));
+    final result = await SyncManager().processOutboxQueue();
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.success ? AppTheme.successGreen : Colors.red,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = Provider.of<LocaleProvider>(context).currentLocale.languageCode;
@@ -35,6 +87,18 @@ class EarningsLedgerScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_ethernet, color: AppTheme.primaryBlue),
+            onPressed: _showConfigDialog,
+            tooltip: 'Config IP',
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync, color: AppTheme.primaryBlue),
+            onPressed: _triggerManualSync,
+            tooltip: 'Sync Outbox',
+          ),
+        ],
       ),
       body: ValueListenableBuilder(
         valueListenable: Hive.box<TransactionModel>('transactionsBox').listenable(),
