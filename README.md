@@ -1,91 +1,72 @@
 # Kabadiwala Connect
-PS26229
-A digital infrastructure layer connecting informal e-waste collectors to the formal recycling ecosystem. The platform helps informal recyclers identify materials, discover fair prices, and sell to authorized recyclers with full digital traceability.
+**Problem Statement:** PS26229 | **Hackathon:** Smart India Hackathon (SIH) 2026
 
-Built for SIH 2026.
+Kabadiwala Connect is a scalable, offline-first digital infrastructure layer designed to seamlessly integrate India's informal e-waste collectors into the formal, statutory recycling ecosystem. It empowers informal waste pickers with transparent material valuation, on-device machine learning for scrap classification, and provides formal recyclers with cryptographically verifiable traceability for Extended Producer Responsibility (EPR) compliance.
 
-## What this does
+## System Architecture
 
-A collector photographs scrap material, the system identifies it using on-device inference, shows the fair local market value, connects them with authorized recyclers nearby, records the transaction, and creates a "material passport" tracking the journey from informal collection to formal recycling.
+The ecosystem consists of three highly integrated components:
 
-## Quick Start
+1. **Mobile Application (Flutter / Dart)**
+   A ruggedized, offline-first mobile application optimized for the informal sector. It features multi-lingual text-to-speech accessibility, an embedded database (via Hive) for offline persistence, and quantized Edge ML models for real-time e-waste classification without internet dependency.
 
-### 1. Backend API (FastAPI)
+2. **Backend Engine (FastAPI / Python)**
+   A high-performance backend enforcing CPCB guidelines. It manages data synchronization via a conflict-free resolution protocol, anomalous transaction detection using IsolationForest machine learning models, and real-time EPR credit valuation routing.
 
+3. **Web Traceability Dashboard (HTML5 / Vanilla CSS3 / JS)**
+   A zero-build-tool, lightweight command center for formal recyclers to monitor live intake, audit supply chains, and instantly export compliance logs formatted for CPCB statutory filings.
+
+## Core Capabilities
+
+- **On-Device Vision Classification:** Collectors photograph scrap to receive instant categorization and baseline pricing via a mobile-optimized neural network, bypassing predatory middleman pricing.
+- **Dynamic Price Discovery:** Real-time calculation of informal baseline rates augmented with Producer-Funded Shared EPR bonuses.
+- **Cryptographic Handovers:** Dual-tier transaction verification. Tier 1 utilizes dynamic QR codes containing SHA-256 hashed transaction payloads. Tier 2 provides an accessible 4-digit spoken PIN fallback for devices with damaged optical sensors.
+- **Asynchronous Offline Sync:** Designed for zero-connectivity environments. Transactions are logged locally and pushed to the central server autonomously when network integrity is restored.
+- **Anomaly Detection:** The backend actively screens incoming sync streams using predictive models to flag irregular transaction patterns (e.g., impossible volume velocities), ensuring ledger integrity.
+- **Accessibility First:** Integrated voice guidance, native language localization, and high-contrast UI paradigms ensure the technology remains usable by illiterate or visually impaired stakeholders.
+
+## Technical Stack
+
+- **Client:** Flutter, Dart, Hive, TensorFlow Lite
+- **Server:** Python 3.10+, FastAPI, SQLAlchemy, SQLite, Scikit-Learn
+- **Web Interface:** Vanilla HTML5, CSS3, ES6 Modules
+
+## Environment Setup & Deployment
+
+### Backend Services
 ```bash
-cd apps/api
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
+cd apps/mobile/backend
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-cp ../../.env.example .env
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
+The server initiates at `http://localhost:8000` with Swagger API documentation available at `/docs`.
 
-The API starts at `http://localhost:8000`. Demo data is seeded automatically on the first run.
-API Docs (Swagger UI): `http://localhost:8000/docs`
-
-### 2. Mobile App (Flutter)
-
-You must have the [Flutter SDK installed](https://docs.flutter.dev/get-started/install).
-
+### Mobile Application
+Ensure the Flutter SDK is installed.
 ```bash
 cd apps/mobile
 flutter pub get
 flutter run
 ```
-
-If you wish to build an Android APK for distribution:
+To compile a release APK for Android distribution:
 ```bash
 flutter build apk --release
 ```
-The compiled APK will be output to `build/app/outputs/flutter-apk/app-release.apk`.
 
-### 3. Web Landing Page
+### Traceability Dashboard
+The web dashboard is served directly by the FastAPI backend under the static mount. Navigate to `http://localhost:8000/apps/mobile/backend/static/` to view live transaction telemetry and anomaly alerts.
 
-The central marketing site and APK distribution hub is built with Vanilla HTML/CSS utilizing modern scroll-driven animations.
+## Project Documentation
 
-```bash
-cd apps/web
-python3 -m http.server 8080
-```
-Open your browser to `http://localhost:8080`.
-
-## Project Structure
-
-```
-apps/
-  api/          # FastAPI Backend Engine (Python, SQLite)
-  mobile/       # Flutter Mobile Application (Dart)
-  web/          # Marketing Landing Page & APK Distributor (HTML/CSS)
-docs/           # Extensive Strategy & Technical Documentation
-```
-
-## Features
-
-- **Fair Price Discovery**: Real-time material rates aggregated to prevent predatory pricing.
-- **Material Classification**: Snap a photo to instantly classify scrap and estimate weight/value using on-device ML (Edge Vision Classifier).
-- **Smart Recycler Matching**: Rank authorized recyclers by materials accepted, rate, and distance.
-- **Traceability Ledger**: Every lot gets a digital identity, recording GPS, timestamps, and verifiable handovers.
-- **Offline First**: Uses local database (Hive) for full offline functionality. Transactions and data are synchronized with the backend via a Sync Manager when connectivity is restored.
-- **Voice Guidance & Accessibility**: Integrated TTS engine and voice intent parser for low-literacy users, with vernacular language onboarding (Hindi, Marathi, etc.).
-- **Safety Guidance**: Contextual safety tips provided to collectors during operations.
-- **Call-to-Recycle (IVR concept)**: Enabling collectors without smartphones to participate via toll-free phone calls.
-
-## Tech Stack
-
-- **Mobile:** Flutter, Dart, Google Fonts, Image Picker, Hive (Local Database), TensorFlow Lite (Edge ML), Flutter TTS
-- **Backend:** FastAPI, Python 3.10+, SQLAlchemy, SQLite, Pydantic v2
-- **Web:** Semantic HTML5, Vanilla CSS3 (Scroll-Timeline)
-
-## Documentation
-
-- [Strategic Analysis](docs/KABADIWALA_STRATEGIC_ANALYSIS.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [MVP Scope](docs/MVP_SCOPE.md)
-- [Demo Script](docs/DEMO_SCRIPT.md)
-- [Data Dictionary](docs/DATA_DICTIONARY.md)
-- [API Reference](docs/API.md)
+Detailed system specifications and strategic analyses are located in the `docs/` directory:
+- Strategic Analysis (`KABADIWALA_STRATEGIC_ANALYSIS.md`)
+- Architecture Design (`ARCHITECTURE.md`)
+- MVP Feature Scope (`MVP_SCOPE.md`)
+- Application Data Dictionary (`DATA_DICTIONARY.md`)
+- API Specification (`API.md`)
 
 ## License
 
-Private - SIH 2026 Submission.
+Private Repository - Exclusive submission for Smart India Hackathon 2026.
