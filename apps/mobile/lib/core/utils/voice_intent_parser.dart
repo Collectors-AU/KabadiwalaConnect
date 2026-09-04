@@ -13,7 +13,7 @@ class VoiceIntentParser {
     double? weight;
 
     // 1. Extract Category
-    if (speech.contains('tamba') || speech.contains('tambyachi') || speech.contains('copper') || speech.contains('wire') || speech.contains('तांबा') || speech.contains('तार')) {
+    if (speech.contains('tamba') || speech.contains('taamba') || speech.contains('tambyachi') || speech.contains('copper') || speech.contains('wire') || speech.contains('cable') || speech.contains('तांबा') || speech.contains('तार')) {
       category = 'CABLE';
     } else if (speech.contains('battery') || speech.contains('cell') || speech.contains('बैटरी') || speech.contains('बॅटरी')) {
       category = 'BATTERY';
