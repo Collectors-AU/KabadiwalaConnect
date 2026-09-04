@@ -21,7 +21,7 @@ class SyncManager {
   factory SyncManager() => _instance;
   SyncManager._internal();
 
-  static String serverHost = "192.168.1.29";
+  static String serverHost = "172.22.128.160";
   String get apiEndpoint => "http://$serverHost:8000/api/v1/sync";
 
   void initSyncListener() {

@@ -61,7 +61,14 @@
             document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(viewId).style.display = 'block';
-            event.currentTarget.classList.add('active');
+            if (event) {
+                event.currentTarget.classList.add('active');
+            } else {
+                // Find and activate the correct nav item on manual call
+                document.querySelectorAll('.nav-item').forEach(n => {
+                    if(n.getAttribute('onclick').includes(viewId)) n.classList.add('active');
+                });
+            }
             
             if (viewId === 'dashboard') loadMetrics();
             if (viewId === 'lots') loadLots();
