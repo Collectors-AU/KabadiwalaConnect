@@ -35,8 +35,7 @@ class VoiceService {
           onStatus(status);
         },
         onError: (error) async {
-          // Catch MIUI/OEM language pack blocking
-          if ((error.errorMsg.contains('language') || error.errorMsg.contains('unavailable') || error.errorMsg.contains('not_supported')) && !_hasAttemptedFallback) {
+          if ((error.errorMsg.contains('error_language_unavailable') || error.errorMsg.contains('error_speech_timeout')) && !_hasAttemptedFallback) {
             _hasAttemptedFallback = true;
             await _speech.stop();
             await Future.delayed(const Duration(milliseconds: 300)); // Brief pause to let Android recognizer reset
@@ -57,7 +56,7 @@ class VoiceService {
             );
           } else {
             isListening = false;
-            onError(error.errorMsg);
+            onError("Voice unavailable. You can adjust the slider manually.");
           }
         },
       );
@@ -65,18 +64,14 @@ class VoiceService {
       if (available) {
         isListening = true;
         
-        var locales = await _speech.locales();
+        final List locales = await _speech.locales();
         String? actualLocaleId = localeId;
-        bool isSupported = locales.any((l) => l.localeId == actualLocaleId);
+        
+        bool isSupported = locales.any((l) => l.localeId == actualLocaleId || l.localeId == actualLocaleId?.replaceAll('_', '-'));
         
         if (!isSupported) {
-          String langCode = localeId.split('_').first;
-          var partialMatch = locales.where((l) => l.localeId.startsWith(langCode)).toList();
-          if (partialMatch.isNotEmpty) {
-            actualLocaleId = partialMatch.first.localeId;
-          } else {
-            actualLocaleId = null;
-          }
+          print("Target locale unavailable. Falling back to device default recognizer.");
+          actualLocaleId = null;
         }
         
         await _speech.listen(

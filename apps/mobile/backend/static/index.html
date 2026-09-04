@@ -150,11 +150,20 @@
             }
         }
 
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
+        function startLiveDashboardPolling() {
+            // Initial fetch
             fetchStats();
             populateTransactions();
-        });
+
+            // Poll every 3 seconds for newly synced offline lots
+            setInterval(() => {
+                fetchStats();
+                populateTransactions();
+            }, 3000);
+        }
+
+        // Call on DOM ready
+        document.addEventListener('DOMContentLoaded', startLiveDashboardPolling);
     </script>
 </body>
 </html>
