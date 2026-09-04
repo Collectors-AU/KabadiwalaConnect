@@ -56,7 +56,7 @@ flutter build apk --release
 ```
 
 ### Traceability Dashboard
-The web dashboard is served directly by the FastAPI backend under the static mount. Navigate to `http://localhost:8000/apps/mobile/backend/static/` to view live transaction telemetry and anomaly alerts.
+The web dashboard is served directly by the FastAPI backend under the static mount. Navigate to `http://localhost:8000/dashboard/` to view live transaction telemetry and anomaly alerts.
 
 ## Project Documentation
 
