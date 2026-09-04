@@ -6,7 +6,7 @@ class ApiService {
   // Note: 10.0.2.2 is the default IP for Android Emulator to connect to host localhost.
   // In production, this would be a real domain or configured via env variables.
   static const String baseUrl = String.fromEnvironment('API_URL',
-      defaultValue: 'http://172.22.128.160:8000/api');
+      defaultValue: 'https://returned-attributes-americans-everyday.trycloudflare.com/api');
 
   static Future<Map<String, dynamic>> getMetrics() async {
     try {
