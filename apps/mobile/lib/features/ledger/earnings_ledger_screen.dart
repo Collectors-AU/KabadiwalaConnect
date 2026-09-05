@@ -110,7 +110,7 @@ class _EarningsLedgerScreenState extends State<EarningsLedgerScreen> {
           final transactions = box.values.toList().reversed.toList(); // Newest first
 
           for (var txn in transactions) {
-            if (txn.status == 'HANDOVER_COMPLETE') {
+            if (txn.status == 'HANDOVER_COMPLETE' || txn.status == 'SYNCED_TO_SERVER') {
               totalCashEarned += txn.totalPayoutInr;
               completedCount++;
             } else if (txn.status == 'LOCAL_PENDING') {
@@ -182,7 +182,7 @@ class _EarningsLedgerScreenState extends State<EarningsLedgerScreen> {
                   itemCount: transactions.length,
                   itemBuilder: (context, index) {
                     final txn = transactions[index];
-                    final isCompleted = txn.status == 'HANDOVER_COMPLETE';
+                    final isCompleted = (txn.status == 'HANDOVER_COMPLETE' || txn.status == 'SYNCED_TO_SERVER');
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),

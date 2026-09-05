@@ -21,8 +21,8 @@ class SyncManager {
   factory SyncManager() => _instance;
   SyncManager._internal();
 
-  static String serverHost = "returned-attributes-americans-everyday.trycloudflare.com";
-  String get apiEndpoint => "https://$serverHost/api/v1/sync";
+  static String serverHost = "10.5.156.13:8000";
+  String get apiEndpoint => "http://$serverHost/api/v1/sync";
 
   void initSyncListener() {
     // Fire a sync immediately on app boot
